@@ -1,5 +1,8 @@
 package io.swagger;
 
+import brave.Tracing;
+import brave.opentracing.BraveTracer;
+import brave.sampler.Sampler;
 import com.amazonaws.xray.javax.servlet.AWSXRayServletFilter;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
@@ -10,6 +13,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
+import zipkin.Span;
+import zipkin.reporter.AsyncReporter;
+import zipkin.reporter.Encoding;
+import zipkin.reporter.okhttp3.OkHttpSender;
 
 @SpringBootApplication
 @EnableSwagger2
@@ -25,6 +32,17 @@ public class Swagger2SpringBoot implements CommandLineRunner {
 		registration.addUrlPatterns("*");
 		registration.addInitParameter("fixedName", "XRayServletFilter");
 		return registration;
+	}
+
+	@Bean
+	public io.opentracing.Tracer zipkinTracer(){
+		OkHttpSender okHttpSender = OkHttpSender.create("http://localhost:9411/api/v1/spans");
+		AsyncReporter<Span> reporter = AsyncReporter.builder(okHttpSender).build();
+		Tracing braveTracer = Tracing.newBuilder()
+				.localServiceName("spring-boot")
+				.reporter(reporter)
+				.build();
+		return BraveTracer.create(braveTracer);
 	}
 
 	@Override
