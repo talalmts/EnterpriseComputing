@@ -2,37 +2,21 @@ package io.swagger;
 
 import brave.Tracing;
 import brave.opentracing.BraveTracer;
-import brave.sampler.Sampler;
-import com.amazonaws.xray.javax.servlet.AWSXRayServletFilter;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.embedded.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import zipkin.Span;
 import zipkin.reporter.AsyncReporter;
-import zipkin.reporter.Encoding;
 import zipkin.reporter.okhttp3.OkHttpSender;
 
 @SpringBootApplication
 @EnableSwagger2
 @ComponentScan(basePackages = "io.swagger")
 public class Swagger2SpringBoot implements CommandLineRunner {
-
-	@Bean
-	public FilterRegistrationBean xRayServletFilterRegistration() {
-
-		FilterRegistrationBean registration = new FilterRegistrationBean();
-		registration.setFilter(new AWSXRayServletFilter());
-		registration.setName("XRayServletFilter");
-		registration.addUrlPatterns("*");
-		registration.addInitParameter("fixedName", "XRayServletFilter");
-		return registration;
-	}
 
 	@Bean
 	public io.opentracing.Tracer zipkinTracer(){
