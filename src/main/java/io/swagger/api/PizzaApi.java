@@ -86,7 +86,7 @@ public interface PizzaApi {
     @RequestMapping(value = "/pizza",
         produces = { "application/json" }, 
         method = RequestMethod.GET)
-    ResponseEntity<List<Integer>> getPizzas();
+    ResponseEntity<List<Pizza>> getPizzas();
 
 
     @ApiOperation(value = "Find topping by ID", notes = "Returns the topping with the given ID.", response = Topping.class, tags={ "pizza", })

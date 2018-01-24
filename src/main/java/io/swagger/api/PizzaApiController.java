@@ -1,19 +1,23 @@
 package io.swagger.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiParam;
 import io.swagger.data.DataAccessLayer;
 import io.swagger.exceptions.InvalidPizzaException;
 import io.swagger.helper.UrlHelper;
 import io.swagger.model.Pizza;
 import io.swagger.model.Topping;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -24,6 +28,9 @@ import java.util.List;
 
 @Controller
 public class PizzaApiController implements PizzaApi {
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     public ResponseEntity<Void> addPizza(@ApiParam(value = "Pizza that should be added to the menu" ,required=true ) @RequestBody Pizza body, HttpServletRequest request) {
         if(StringUtils.isEmpty(body.getName()))
@@ -40,21 +47,22 @@ public class PizzaApiController implements PizzaApi {
     public ResponseEntity<Void> createTopping(@ApiParam(value = "ID of pizza to update",required=true ) @PathVariable("pizzaId") Long pizzaId,
         @ApiParam(value = "Topping to be added to the pizza" ,required=true ) @RequestBody Topping body, HttpServletRequest request) {
 
-        if(StringUtils.isEmpty(body.getName()) || body.getPrice().equals(0)) {
-            return new ResponseEntity<Void>(HttpStatus.BAD_REQUEST);
-        }
-
-        Pizza pizza = DataAccessLayer.getPizzaById(pizzaId);
-        if(pizza == null)
-            return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
-
-        boolean isToppingAdded = pizza.addTopping(body);
-        if(!isToppingAdded)
-            return new ResponseEntity<Void>(HttpStatus.BAD_REQUEST);
-        try {
-            return ResponseEntity.<Void>created(URI.create(UrlHelper.getURLBase(request) + "/v1/pizza/" + pizzaId + "/topping/" + body.getId())).build();
-        } catch (MalformedURLException e) { }
-        return ResponseEntity.<Void>created(URI.create("/v1/pizza/" + pizzaId + "/topping/" + body.getId())).build();
+//        if(StringUtils.isEmpty(body.getName()) || body.getPrice().equals(0)) {
+//            return new ResponseEntity<Void>(HttpStatus.BAD_REQUEST);
+//        }
+//
+//        Pizza pizza = DataAccessLayer.getPizzaById(pizzaId);
+//        if(pizza == null)
+//            return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
+//
+//        boolean isToppingAdded = pizza.addTopping(body);
+//        if(!isToppingAdded)
+//            return new ResponseEntity<Void>(HttpStatus.BAD_REQUEST);
+//        try {
+//            return ResponseEntity.<Void>created(URI.create(UrlHelper.getURLBase(request) + "/v1/pizza/" + pizzaId + "/topping/" + body.getId())).build();
+//        } catch (MalformedURLException e) { }
+//        return ResponseEntity.<Void>created(URI.create("/v1/pizza/" + pizzaId + "/topping/" + body.getId())).build();
+        return null;
     }
 
     public ResponseEntity<Void> deletePizza(@ApiParam(value = "Id of pizza to delete.",required=true ) @PathVariable("pizzaId") Long pizzaId) {
@@ -66,15 +74,16 @@ public class PizzaApiController implements PizzaApi {
 
     public ResponseEntity<Void> deleteToppingById(@ApiParam(value = "ID of the pizza.",required=true ) @PathVariable("pizzaId") Long pizzaId,
         @ApiParam(value = "ID of the topping.",required=true ) @PathVariable("toppingId") Long toppingId) {
-        Pizza pizza = DataAccessLayer.getPizzaById(pizzaId);
-        if(pizza == null)
-            return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
-
-        boolean deleteTopping = pizza.deleteTopping(toppingId);
-
-        if(!deleteTopping)
-            return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
-        return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+//        Pizza pizza = DataAccessLayer.getPizzaById(pizzaId);
+//        if(pizza == null)
+//            return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
+//
+//        boolean deleteTopping = pizza.deleteTopping(toppingId);
+//
+//        if(!deleteTopping)
+//            return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
+//        return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+        return null;
     }
 
     public ResponseEntity<Pizza> getPizzaById(@ApiParam(value = "ID of pizzas",required=true ) @PathVariable("pizzaId") Long pizzaId) {
@@ -84,7 +93,18 @@ public class PizzaApiController implements PizzaApi {
         return new ResponseEntity<Pizza>(pizza, HttpStatus.OK);
     }
 
-    public ResponseEntity<List<Integer>> getPizzas() {
+    public ResponseEntity<List<Pizza>> getPizzas() {
+        ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8081/service/pizza/get-all", String.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            List<Pizza> pizzas = objectMapper.readValue(
+                    response.getBody(),
+                    objectMapper.getTypeFactory().constructParametricType(List.class, Pizza.class)
+            );
+            return new ResponseEntity<>(pizzas, HttpStatus.OK);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         List<Pizza> allPizza = DataAccessLayer.getAllPizza();
         List<Integer> ids = new ArrayList<>();
 
@@ -92,32 +112,35 @@ public class PizzaApiController implements PizzaApi {
             ids.add(Integer.parseInt(pizza.getId().toString()));
         }
 
-        return new ResponseEntity<List<Integer>>(ids, HttpStatus.OK);
+        //return new ResponseEntity<List<Integer>>(ids, HttpStatus.OK);
+        return null;
     }
 
     public ResponseEntity<Topping> getToppingById(@ApiParam(value = "ID of the pizza.",required=true ) @PathVariable("pizzaId") Long pizzaId,
         @ApiParam(value = "ID of the topping.",required=true ) @PathVariable("toppingId") Long toppingId) {
-        Pizza pizza = DataAccessLayer.getPizzaById(pizzaId);
-        if(pizza == null)
-            return new ResponseEntity<Topping>(HttpStatus.NOT_FOUND);
-
-        Topping topping = pizza.getTopping(toppingId);
-        if(topping == null)
-            return new ResponseEntity<Topping>(HttpStatus.NOT_FOUND);
-        return new ResponseEntity<Topping>(topping, HttpStatus.OK);
+//        Pizza pizza = DataAccessLayer.getPizzaById(pizzaId);
+//        if(pizza == null)
+//            return new ResponseEntity<Topping>(HttpStatus.NOT_FOUND);
+//
+//        Topping topping = pizza.getTopping(toppingId);
+//        if(topping == null)
+//            return new ResponseEntity<Topping>(HttpStatus.NOT_FOUND);
+//        return new ResponseEntity<Topping>(topping, HttpStatus.OK);
+        return null;
     }
 
     public ResponseEntity<List<Integer>> listToppings(@ApiParam(value = "ID of pizza",required=true ) @PathVariable("pizzaId") Long pizzaId) {
-        Pizza pizza = DataAccessLayer.getPizzaById(pizzaId);
-        if(pizza == null)
-            return new ResponseEntity<List<Integer>>(HttpStatus.NOT_FOUND);
-
-        List<Integer> toppingIds = new ArrayList<>();
-        for (Topping topping :
-                pizza.getToppings()) {
-            toppingIds.add(Integer.parseInt(topping.getId().toString()));
-        }
-        return new ResponseEntity<List<Integer>>(toppingIds, HttpStatus.OK);
+//        Pizza pizza = DataAccessLayer.getPizzaById(pizzaId);
+//        if(pizza == null)
+//            return new ResponseEntity<List<Integer>>(HttpStatus.NOT_FOUND);
+//
+//        List<Integer> toppingIds = new ArrayList<>();
+//        for (Topping topping :
+//                pizza.getToppings()) {
+//            toppingIds.add(Integer.parseInt(topping.getId().toString()));
+//        }
+//        return new ResponseEntity<List<Integer>>(toppingIds, HttpStatus.OK);
+        return null;
     }
 
     public ResponseEntity<Void> updatePizza(@ApiParam(value = "Pizza that should be modified" ,required=true ) @RequestBody Pizza body,

@@ -1,24 +1,27 @@
 package io.swagger.model;
 
-import java.util.ArrayList;
-import java.util.Objects;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.data.DataAccessLayer;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
  * Pizza
  */
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.SpringCodegen", date = "2017-11-19T00:27:22.232Z")
 
+@Entity
 public class Pizza {
+
+    @Id
+    @GeneratedValue(strategy= GenerationType.AUTO)
     @JsonProperty("id")
     private Long id = null;
 
@@ -61,9 +64,6 @@ public class Pizza {
 
     @JsonProperty("price")
     private BigDecimal price = null;
-
-    @JsonIgnore
-    private ArrayList<Topping> toppings = new ArrayList<>();
 
     public Pizza id(Long id) {
         this.id = id;
@@ -135,43 +135,11 @@ public class Pizza {
     @ApiModelProperty(value = "Price including toppings.")
     public BigDecimal getPrice() {
         BigDecimal totalprice = price;
-        for (Topping topping :
-                toppings) {
-            totalprice = totalprice.add(topping.getPrice());
-        }
         return totalprice;
     }
 
     public void setPrice(BigDecimal price) {
         this.price = price;
-    }
-
-    @JsonIgnore
-    public ArrayList<Topping> getToppings() {
-        return toppings;
-    }
-
-    public boolean addTopping(Topping topping){
-        topping.setId(DataAccessLayer.getNewToppingId());
-        return toppings.add(topping);
-    }
-
-    public Topping getTopping(Long toppingId){
-        for (Topping topping :
-                toppings) {
-            if (topping.getId().equals(toppingId))
-                return topping;
-        }
-        return null;
-    }
-
-    public boolean deleteTopping(Long toppingId){
-        for (Topping topping :
-                toppings) {
-            if (topping.getId().equals(toppingId))
-                return toppings.remove(topping);
-        }
-        return false;
     }
 
     @Override
